@@ -40,8 +40,8 @@ export const getAppointments = async (req, res) => {
       : { patient: req.user.id };
 
     const appointments = await Appointment.find(query)
-      .populate("patient", "name email")
-      .populate("healthProfessional", "name email")
+      .populate("patient", "name email userType")
+      .populate("healthProfessional", "name email userType")
       .sort({ createdAt: -1 });
 
     res.json({ success: true, data: appointments });
@@ -55,17 +55,18 @@ export const getAppointments = async (req, res) => {
 export const updateAppointmentStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const appointment = await Appointment.findOne({
+    const appointment = await Appointment.findOneAndUpdate({
       _id: req.params.id,
       healthProfessional: req.user.id,
-    });
+    }, 
+    { status: status },
+    { new: true })
+    .populate("patient", "name email userType")
+    .populate("healthProfessional", "name email userType");
 
     if (!appointment) {
       return res.status(404).json({ success: false, message: "Appointment not found" });
     }
-
-    appointment.status = status || appointment.status;
-    await appointment.save();
 
     res.json({ success: true, data: appointment });
   } catch (error) {

@@ -1,8 +1,13 @@
 import { BookOpen, Calendar, Heart, MessageCircle, Users } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useAppointmentStore } from "../../store/useAppointmentStore";
+import HospitalMaps from "./HospitalMaps";
 
 const AdultDashboard = () => {
+	const [showMapsModal, setShowMapsModal] = useState(false);
 	const { appointments, loading } = useAppointmentStore();
 
 	if (loading) return <p>Loading...</p>;
@@ -54,6 +59,15 @@ const AdultDashboard = () => {
 					<h3 className="text-lg font-semibold text-gray-900 mb-2">Ask Questions</h3>
 					<p className="text-gray-600">Get instant answers to your questions</p>
 				</Link>
+
+				<button
+					onClick={() => setShowMapsModal(true)}
+					className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 text-left w-full"
+				>
+					<MapPin className="h-8 w-8 text-green-600 mb-4" />
+					<h3 className="text-lg font-semibold text-gray-900 mb-2">Find Nearby Hospitals</h3>
+					<p className="text-gray-600">Locate sexual health specialists near you</p>
+				</button>
 			</div>
 
 			{/* Bottom section */}
@@ -112,6 +126,23 @@ const AdultDashboard = () => {
 					</div>
 				</div>
 			</div>
+
+			{/* Hospital Maps Modal */}
+			{showMapsModal && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+					<div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+						<div className="flex justify-between items-center p-6 border-b border-gray-200">
+							<h3 className="text-xl font-semibold text-gray-900">Find Nearby Sexual Health Specialists</h3>
+							<button onClick={() => setShowMapsModal(false)} className="text-gray-400 hover:text-gray-600">
+								<X className="h-6 w-6" />
+							</button>
+						</div>
+						<div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+							<HospitalMaps />
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

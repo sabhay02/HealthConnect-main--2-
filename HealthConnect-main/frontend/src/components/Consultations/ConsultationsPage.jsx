@@ -1,9 +1,12 @@
 import { AlertCircle, Calendar, CheckCircle, Clock, Phone, Plus, User, Video } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppointmentStore } from "../../store/useAppointmentStore.jsx";
+import HospitalMaps from "../Dashboard/HospitalMaps";
 
 const ConsultationsPage = () => {
 	const [showBookingForm, setShowBookingForm] = useState(false);
+	const [showMapsView, setShowMapsView] = useState(false);
 	const [selectedDate, setSelectedDate] = useState("");
 	const [selectedTime, setSelectedTime] = useState("");
 	const [selectedDoctor, setSelectedDoctor] = useState("");
@@ -77,16 +80,45 @@ const ConsultationsPage = () => {
 					<h1 className="text-3xl font-bold text-gray-900">Book Consultation</h1>
 					<p className="mt-2 text-gray-600">Book confidential consultations with healthcare professionals</p>
 				</div>
-				{!showBookingForm && (
-					<button
-						onClick={() => setShowBookingForm(true)}
-						className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-					>
-						<Plus className="h-4 w-4 mr-2" /> Book Appointment
-					</button>
-				)}
+				<div className="flex space-x-3">
+					{!showBookingForm && !showMapsView && (
+						<>
+							<button
+								onClick={() => setShowMapsView(true)}
+								className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+							>
+								<MapPin className="h-4 w-4 mr-2" /> Find Nearby Hospitals
+							</button>
+							<button
+								onClick={() => setShowBookingForm(true)}
+								className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+							>
+								<Plus className="h-4 w-4 mr-2" /> Book Appointment
+							</button>
+						</>
+					)}
+					{(showBookingForm || showMapsView) && (
+						<button
+							onClick={() => {
+								setShowBookingForm(false);
+								setShowMapsView(false);
+							}}
+							className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+						>
+							← Back to Consultations
+						</button>
+					)}
+				</div>
 			</div>
 
+			{/* Show Maps View */}
+			{showMapsView && (
+				<HospitalMaps />
+			)}
+
+			{/* Show normal consultation content when not in maps view */}
+			{!showMapsView && (
+				<>
 			{/* Error Display */}
 			{error && (
 				<div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
@@ -322,6 +354,8 @@ const ConsultationsPage = () => {
 					</div>
 				)}
 			</div>
+				</>
+			)}
 		</div>
 	);
 };
