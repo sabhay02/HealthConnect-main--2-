@@ -77,14 +77,24 @@ const ConsultationsPage = () => {
 					<h1 className="text-3xl font-bold text-gray-900">Book Consultation</h1>
 					<p className="mt-2 text-gray-600">Book confidential consultations with healthcare professionals</p>
 				</div>
-				{!showBookingForm && (
-					<button
-						onClick={() => setShowBookingForm(true)}
-						className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-					>
-						<Plus className="h-4 w-4 mr-2" /> Book Appointment
-					</button>
-				)}
+				<div className="flex space-x-3">
+					{!showBookingForm && (
+						<button
+							onClick={() => setShowBookingForm(true)}
+							className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+						>
+							<Plus className="h-4 w-4 mr-2" /> Book Appointment
+						</button>
+					)}
+					{showBookingForm && (
+						<button
+							onClick={() => setShowBookingForm(false)}
+							className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+						>
+							← Back to Consultations
+						</button>
+					)}
+				</div>
 			</div>
 
 			{/* Error Display */}

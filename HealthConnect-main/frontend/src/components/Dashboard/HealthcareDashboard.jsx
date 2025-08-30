@@ -1,13 +1,13 @@
-import { AlertTriangle, Calendar, CheckCircle, Clock, MessageSquare, Phone, Users, Video, X } from "lucide-react";
+import { AlertTriangle, Calendar, CheckCircle, Clock, MessageSquare, Phone, Plus, Users, Video, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAppointmentStore } from "../../store/useAppointmentStore";
-import emailjs from "emailjs-com"; // Updated import
+import emailjs from "emailjs-com";
 
 const HealthcareDashboard = () => {
 	const [selectedAppointment, setSelectedAppointment] = useState(null);
 	const [showModal, setShowModal] = useState(false);
-	const [emailStatus, setEmailStatus] = useState(''); // For showing email status
+	const [emailStatus, setEmailStatus] = useState('');
 
 	const {
 		appointments,
@@ -24,7 +24,6 @@ const HealthcareDashboard = () => {
 
 	// Initialize EmailJS
 	useEffect(() => {
-		// Initialize EmailJS with your public key
 		emailjs.init("D4GFAJzB2x1z2bDs5");
 		console.log("EmailJS initialized");
 	}, []);
@@ -44,128 +43,57 @@ const HealthcareDashboard = () => {
 	const upcomingAppointments = getUpcomingAppointments();
 	const pastAppointments = getPastAppointments();
 
-	// ---- EmailJS send function ----
+	// Fixed EmailJS send function
 	const sendAppointmentEmail = async (appointment) => {
 		try {
-			console.log("🔍 Full appointment object:", appointment);
+			console.log("🔍 Sending email for appointment:", appointment);
 			
-			// The patient field contains an ID, not the actual patient object
-			// We need to look for email in other places or fetch patient data
-			let patientEmail, patientName;
-			
-			// Check if email is stored directly on appointment
-			if (appointment.patientEmail || appointment.email || appointment.userEmail) {
-				patientEmail = appointment.patientEmail || appointment.email || appointment.userEmail;
-				patientName = appointment.patientName || appointment.userName || "Patient";
-			}
-			// Check if patient is populated (object instead of string ID)
-			else if (appointment.patient && typeof appointment.patient === 'object' && appointment.patient.email) {
-				patientEmail = appointment.patient.email;
-				patientName = appointment.patient.name || "Patient";
-			}
-			// If patient is just an ID, we might need to fetch patient data
-			// or check if there's a populated patient field elsewhere
-			else {
-				console.log("🔍 Patient field is ID:", appointment.patient);
-				console.log("🔍 Looking for email in other fields...");
-				console.log("🔍 All appointment fields:", Object.keys(appointment));
-				
-				// Check if there's an email field stored elsewhere
-				// Sometimes the email might be in a different field
-				patientEmail = appointment.contactEmail || 
-							  appointment.clientEmail || 
-							  appointment.bookingEmail ||
-							  appointment.requestEmail;
-				
-				patientName = appointment.contactName || 
-							 appointment.clientName || 
-							 appointment.bookingName ||
-							 appointment.requestName ||
-							 "Patient";
-			}
+			const patientEmail = appointment.patient?.email;
+			const patientName = appointment.patient?.name || "Patient";
+			const healthProfName = appointment.healthProfessional?.name || "Healthcare Professional";
 
-			console.log("🔍 Found patient email:", patientEmail);
-			console.log("🔍 Found patient name:", patientName);
-			
-			// Validate required fields
 			if (!patientEmail) {
-				console.error("❌ No patient email found in any expected field");
-				console.log("🔍 Available fields:", Object.keys(appointment));
-				throw new Error(`Patient email not found. Available fields: ${Object.keys(appointment).join(', ')}`);
+				throw new Error("Patient email not found");
 			}
 
-			// Prepare template parameters to match your EmailJS template exactly
+			// Generate meeting link
+			const meetingLink = `https://meet.jit.si/healthconnect-${appointment._id}`;
+
+			// Template parameters matching your EmailJS template
 			const templateParams = {
-				to_email: patientEmail,
 				to_name: patientName,
-				health_prof_name: appointment.healthProfessional?.name || "Healthcare Team",
-				health_prof_email: appointment.healthProfessional?.email || "noreply@healthcare.com",
-				meeting_link: appointment.meetingLink || `https://meet.jit.si/${appointment._id}`,
+				to_email: patientEmail,
+				health_prof_name: healthProfName,
 				appointment_date: formatDate(appointment.appointmentDate),
 				appointment_time: formatTime(appointment.appointmentTime),
+				meeting_link: meetingLink,
 			};
 
-			console.log("📧 Sending email with template params:", templateParams);
-			setEmailStatus('Sending email...');
+			console.log("📧 Sending email with params:", templateParams);
+			setEmailStatus('Sending confirmation email...');
 
 			const result = await emailjs.send(
-				"service_ypl51ui",    // Your service ID
-				"template_uqsslc3",   // Your template ID
+				"service_ypl51ui",
+				"template_uqsslc3",
 				templateParams,
-				"D4GFAJzB2x1z2bDs5"   // Your public key
+				"D4GFAJzB2x1z2bDs5"
 			);
 
 			console.log("✅ Email sent successfully:", result);
-			setEmailStatus('Email sent successfully!');
+			setEmailStatus('Confirmation email sent successfully!');
 			
-			// Clear success message after 3 seconds
 			setTimeout(() => setEmailStatus(''), 3000);
-			
 			return result;
 			
 		} catch (error) {
 			console.error("❌ Failed to send email:", error);
 			setEmailStatus('Failed to send email: ' + (error.message || error.text || 'Unknown error'));
-			
-			// Clear error message after 5 seconds
 			setTimeout(() => setEmailStatus(''), 5000);
-			
 			throw error;
 		}
 	};
 
-	// Test email function for debugging
-	const testEmail = async () => {
-		try {
-			setEmailStatus('Testing email connection...');
-			
-			const testParams = {
-				to_email: "test@example.com", // Replace with your test email
-				to_name: "Test Patient",
-				health_prof_name: "Dr. Test",
-				health_prof_email: "doctor@test.com",
-				meeting_link: "https://meet.jit.si/test123",
-				appointment_date: "Dec 25, 2024",
-				appointment_time: "10:00 AM",
-			};
-
-			const result = await emailjs.send(
-				"service_ypl51ui",
-				"template_uqsslc3",
-				testParams,
-				"D4GFAJzB2x1z2bDs5"
-			);
-			
-			console.log("✅ Test email sent:", result);
-			setEmailStatus('Test email sent successfully!');
-			
-		} catch (error) {
-			console.error("❌ Test email failed:", error);
-			setEmailStatus('Test email failed: ' + (error.message || error.text || 'Unknown error'));
-		}
-	};
-
-	// ---- Status update with improved email handling ----
+	// Status update with fixed email handling
 	const handleStatusUpdate = async (appointmentId, newStatus) => {
 		try {
 			console.log(`🔄 Updating appointment ${appointmentId} to status: ${newStatus}`);
@@ -175,34 +103,12 @@ const HealthcareDashboard = () => {
 
 			// Send email only on acceptance
 			if (newStatus === "accepted") {
-				// Try multiple possible email field locations
-				const patientEmail = updated.patient?.email || 
-								   updated.patientEmail || 
-								   updated.email || 
-								   updated.patient?.emailAddress ||
-								   updated.userEmail;
-
-				console.log("🔍 Checking for email in updated appointment:");
-				console.log("🔍 updated.patient?.email:", updated.patient?.email);
-				console.log("🔍 updated.patientEmail:", updated.patientEmail);
-				console.log("🔍 updated.email:", updated.email);
-				console.log("🔍 Final patientEmail found:", patientEmail);
-
-				if (patientEmail) {
-					try {
-						await sendAppointmentEmail(updated);
-						console.log("✅ Confirmation email sent successfully");
-					} catch (emailError) {
-						console.error("❌ Email failed but appointment was updated:", emailError);
-						alert(`Appointment ${newStatus} successfully, but failed to send confirmation email. Please contact the patient directly at ${patientEmail}`);
-					}
-				} else {
-					console.warn("⚠️ No patient email found in any expected field");
-					console.log("🔍 Available fields in updated appointment:", Object.keys(updated));
-					if (updated.patient) {
-						console.log("🔍 Available fields in patient object:", Object.keys(updated.patient));
-					}
-					alert(`Appointment ${newStatus} successfully, but no patient email found to send confirmation.`);
+				try {
+					await sendAppointmentEmail(updated);
+					console.log("✅ Confirmation email sent successfully");
+				} catch (emailError) {
+					console.error("❌ Email failed but appointment was updated:", emailError);
+					alert(`Appointment ${newStatus} successfully, but failed to send confirmation email.`);
 				}
 			}
 
@@ -263,7 +169,7 @@ const HealthcareDashboard = () => {
 			completedCount: statusCounts.completed || 0,
 			cancelledCount: (statusCounts.cancelled || 0) + (statusCounts.rejected || 0),
 			statusCounts,
-			monthlyData: [], // Add your monthly data calculation here
+			monthlyData: [],
 		};
 	})();
 
@@ -292,8 +198,12 @@ const HealthcareDashboard = () => {
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 			<div className="mb-8">
-				<h1 className="text-3xl font-bold text-gray-900">Healthcare Provider Dashboard</h1>
-				<p className="mt-2 text-gray-600">Manage appointments and monitor platform activity</p>
+				<div className="flex justify-between items-center">
+					<div>
+						<h1 className="text-3xl font-bold text-gray-900">Healthcare Provider Dashboard</h1>
+						<p className="mt-2 text-gray-600">Manage appointments and monitor platform activity</p>
+					</div>
+				</div>
 				
 				{/* Email Status Display */}
 				{emailStatus && (
@@ -305,20 +215,6 @@ const HealthcareDashboard = () => {
 						{emailStatus}
 					</div>
 				)}
-
-				{/* Debug Info - Remove in production */}
-				<div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-6">
-					<h4 className="font-semibold text-gray-900 mb-2">Debug Info (Remove in production)</h4>
-					<div className="text-sm text-gray-700 space-y-1">
-						<p><strong>Total appointments:</strong> {appointments.length}</p>
-						<p><strong>Sample appointment structure:</strong></p>
-						{appointments.length > 0 && (
-							<pre className="bg-white p-2 rounded text-xs overflow-auto max-h-40">
-								{JSON.stringify(appointments[0], null, 2)}
-							</pre>
-						)}
-					</div>
-				</div>
 			</div>
 
 			{/* Error Display */}
@@ -331,7 +227,7 @@ const HealthcareDashboard = () => {
 							onClick={clearError}
 							className="ml-auto text-red-600 hover:text-red-800"
 						>
-							<X className="h-4 w-4" />
+							×
 						</button>
 					</div>
 				</div>
@@ -536,7 +432,7 @@ const HealthcareDashboard = () => {
 										</p>
 									</div>
 									<span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-										{appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+										{appointment.status}
 									</span>
 								</div>
 								<div className="flex items-center text-sm text-gray-500">
@@ -589,7 +485,7 @@ const HealthcareDashboard = () => {
 										</div>
 									</div>
 									<span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-										{appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+										{appointment.status}
 									</span>
 								</div>
 							</div>
@@ -639,7 +535,7 @@ const HealthcareDashboard = () => {
 							<div>
 								<label className="text-sm font-medium text-gray-700">Status:</label>
 								<span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedAppointment.status)}`}>
-									{selectedAppointment.status.charAt(0).toUpperCase() + selectedAppointment.status.slice(1)}
+									{selectedAppointment.status}
 								</span>
 							</div>
 
